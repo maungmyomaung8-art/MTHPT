@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mini App</title>
+  <title>Pattern Game</title>
 
   <!-- Telegram SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -11,43 +11,119 @@
     body {
       margin: 0;
       height: 100vh;
-      background-color: #007bff; /* Blue background */
+      background-color: #007bff;
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-direction: column;
       font-family: Arial, sans-serif;
+      color: white;
     }
 
-    .play-btn {
-      background-color: white;
-      color: #007bff;
-      border: none;
-      padding: 20px 40px;
-      font-size: 24px;
-      border-radius: 12px;
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 120px);
+      grid-gap: 15px;
+    }
+
+    .btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 20px;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      opacity: 0.8;
       transition: 0.2s;
     }
 
-    .play-btn:hover {
-      transform: scale(1.1);
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .red { background: red; }
+    .green { background: green; }
+    .yellow { background: yellow; }
+    .blue { background: blue; }
+
+    .active {
+      opacity: 1;
+      box-shadow: 0 0 20px white;
     }
   </style>
 </head>
 
 <body>
 
-  <button class="play-btn" onclick="play()"> PLAY</button>
+  <h2>Pattern Game </h2>
+
+  <div class="grid">
+    <div class="btn red" onclick="playerClick(0)"></div>
+    <div class="btn green" onclick="playerClick(1)"></div>
+    <div class="btn yellow" onclick="playerClick(2)"></div>
+    <div class="btn blue" onclick="playerClick(3)"></div>
+  </div>
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.expand(); // full screen
+    tg.expand();
 
-    function play() {
-      alert("Game Start ");
+    let sequence = [];
+    let player = [];
+    let started = false;
+
+    function startGame() {
+      sequence = [];
+      nextRound();
+    }
+
+    function nextRound() {
+      player = [];
+      const rand = Math.floor(Math.random() * 4);
+      sequence.push(rand);
+      playSequence();
+    }
+
+    function playSequence() {
+      let i = 0;
+      const interval = setInterval(() => {
+        flash(sequence[i]);
+        i++;
+        if (i >= sequence.length) clearInterval(interval);
+      }, 600);
+    }
+
+    function flash(index) {
+      const btns = document.querySelectorAll(".btn");
+      btns[index].classList.add("active");
+      setTimeout(() => {
+        btns[index].classList.remove("active");
+      }, 300);
+    }
+
+    function playerClick(index) {
+      if (!started) {
+        started = true;
+        startGame();
+        return;
+      }
+
+      player.push(index);
+      flash(index);
+
+      if (player[player.length - 1] !== sequence[player.length - 1]) {
+        alert("Game Over ");
+        started = false;
+        return;
+      }
+
+      if (player.length === sequence.length) {
+        setTimeout(nextRound, 800);
+      }
     }
   </script>
 
 </body>
-  </html>
+</html>
