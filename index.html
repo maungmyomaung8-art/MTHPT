@@ -1,129 +1,214 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Pattern Game</title>
+<title>Pattern Game</title>
 
-  <!-- Telegram SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!--  AdGram SDK -->
+<script src="https://adgram.io/sdk.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      background-color: #007bff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      font-family: Arial, sans-serif;
-      color: white;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, 120px);
-      grid-gap: 15px;
-    }
-
-    .btn {
-      width: 120px;
-      height: 120px;
-      border-radius: 20px;
-      cursor: pointer;
-      opacity: 0.8;
-      transition: 0.2s;
-    }
-
-    .btn:active {
-      transform: scale(0.95);
-    }
-
-    .red { background: red; }
-    .green { background: green; }
-    .yellow { background: yellow; }
-    .blue { background: blue; }
-
-    .active {
-      opacity: 1;
-      box-shadow: 0 0 20px white;
-    }
-  </style>
+<style>
+body{margin:0;background:#111;color:#fff;font-family:Arial}
+.content{padding:20px;text-align:center;padding-bottom:80px}
+.top-bar{position:absolute;top:10px;left:15px;right:15px;display:flex;justify-content:space-between}
+.top-bar div{background:#222;padding:6px 10px;border-radius:6px}
+.center-box{min-height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center}
+button{padding:8px 16px;background:#007bff;border:none;border-radius:8px;color:#fff;margin:5px;}
+button:disabled{background:#555}
+.task-item{display:flex;justify-content:space-between;background:#1a1a1a;padding:12px;margin:8px;border-radius:10px;}
+.grid{display:grid;gap:6px;margin-top:20px}
+.cell{aspect-ratio:1;background:#000;border-radius:5px}
+.overlay{position:fixed;top:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center}
+.popup{background:#1a1a1a;padding:20px;border-radius:10px}
+.nav{position:fixed;bottom:0;width:100%;height:60px;background:#1a1a1a;display:flex;justify-content:space-around;align-items:center}
+.nav button{background:none;color:#aaa}
+.input{padding:8px;margin:5px;background:#000;color:#fff;border:none}
+.link-box{background:#222;padding:10px;border-radius:8px;word-break:break-all}
+.history-box{width:90%;background:#1a1a1a;border:1px solid #444;border-radius:10px;padding:10px;margin:8px auto;text-align:left;}
+</style>
 </head>
 
 <body>
 
-  <h2>Pattern Game </h2>
+<div id="content" class="content"></div>
 
-  <div class="grid">
-    <div class="btn red" onclick="playerClick(0)"></div>
-    <div class="btn green" onclick="playerClick(1)"></div>
-    <div class="btn yellow" onclick="playerClick(2)"></div>
-    <div class="btn blue" onclick="playerClick(3)"></div>
-  </div>
+<div class="nav">
+<button onclick="showHome()">Home</button>
+<button onclick="showTasks()">Tasks</button>
+<button onclick="showWallet()">Wallet</button>
+<button onclick="showInvite()">Invite</button>
+</div>
 
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+<script>
 
-    let sequence = [];
-    let player = [];
-    let started = false;
-
-    function startGame() {
-      sequence = [];
-      nextRound();
+// ===== Ad Function =====
+function showAd(){
+    if(window.showAdgram){
+        window.showAdgram({
+            blockId: "int-28235"
+        });
     }
+}
 
-    function nextRound() {
-      player = [];
-      const rand = Math.floor(Math.random() * 4);
-      sequence.push(rand);
-      playSequence();
-    }
+// ===== USER =====
+let userId = localStorage.getItem("userId") || "USER"+Math.floor(Math.random()*100000);
+localStorage.setItem("userId",userId);
 
-    function playSequence() {
-      let i = 0;
-      const interval = setInterval(() => {
-        flash(sequence[i]);
-        i++;
-        if (i >= sequence.length) clearInterval(interval);
-      }, 600);
-    }
+// ===== DATA =====
+let energy=+localStorage.getItem("energy")||10;
+let coins=+localStorage.getItem("coins")||0;
+let level=+localStorage.getItem("level")||1;
+let pendingLevel=+localStorage.getItem("pendingLevel")||1;
+let history=JSON.parse(localStorage.getItem("history")||"[]");
+let channelDone=localStorage.getItem("channelDone")==="true";
+let groupDone=localStorage.getItem("groupDone")==="true";
 
-    function flash(index) {
-      const btns = document.querySelectorAll(".btn");
-      btns[index].classList.add("active");
-      setTimeout(() => {
-        btns[index].classList.remove("active");
-      }, 300);
-    }
+function save(){
+localStorage.setItem("energy",energy);
+localStorage.setItem("coins",coins);
+localStorage.setItem("level",level);
+localStorage.setItem("pendingLevel",pendingLevel);
+localStorage.setItem("history",JSON.stringify(history));
+localStorage.setItem("channelDone",channelDone);
+localStorage.setItem("groupDone",groupDone);
+}
 
-    function playerClick(index) {
-      if (!started) {
-        started = true;
-        startGame();
-        return;
-      }
+// ===== HOME =====
+function showHome(){
+save();
+content.innerHTML=`
+<div class="top-bar">
+<div>Energy: ${energy}</div>
+<div>Coin: ${coins}</div>
+</div>
+<div class="center-box">
+<h1>Pattern Game</h1>
+<button onclick="startGame()">Play</button>
+</div>`;
+}
 
-      player.push(index);
-      flash(index);
+// ===== TASKS =====
+function showTasks(){
+content.innerHTML=`
+<h2>Tasks</h2>
 
-      if (player[player.length - 1] !== sequence[player.length - 1]) {
-        alert("Game Over ");
-        started = false;
-        return;
-      }
+<div class="task-item">
+<div>Watch Ad</div>
+<button onclick="watchAd()">Watch</button>
+</div>
 
-      if (player.length === sequence.length) {
-        setTimeout(nextRound, 800);
-      }
-    }
-  </script>
+<p>Each task = +10 Energy</p>`;
+}
+
+function watchAd(){
+showAd();
+setTimeout(()=>{
+energy+=10;
+save();
+alert("Reward Added!");
+},3000);
+}
+
+// ===== WALLET =====
+function showWallet(){
+content.innerHTML=`
+<div class="center-box">
+<h2>${coins} Coins</h2>
+<button onclick="showHome()">Back</button>
+</div>`;
+}
+
+// ===== GAME =====
+function startGame(){
+if(energy<=0)return;
+energy--;
+level=pendingLevel;
+save();
+load();
+}
+
+function generatePattern(len){
+let arr=[];
+for(let i=0;i<len;i++){
+arr.push(Math.floor(Math.random()*16));
+}
+return arr;
+}
+
+function showPattern(pattern){
+let i=0;
+let interval=setInterval(()=>{
+let c=document.getElementById("c"+pattern[i]);
+c.style.background="#0af";
+setTimeout(()=>c.style.background="#000",300);
+i++;
+if(i>=pattern.length) clearInterval(interval);
+},600);
+}
+
+function load(){
+let html=`<h2>Level ${level}</h2>
+<div class="grid" style="grid-template-columns:repeat(4,1fr)">`;
+
+for(let i=0;i<16;i++){
+html+=`<div class="cell" id="c${i}"></div>`;
+}
+html+="</div>";
+
+content.innerHTML=html;
+
+let pattern=generatePattern(level+2);
+let user=[];
+
+setTimeout(()=>showPattern(pattern),500);
+
+document.querySelectorAll(".cell").forEach(cell=>{
+cell.onclick=()=>{
+let idx=+cell.id.replace("c","");
+cell.style.background="#0f0";
+setTimeout(()=>cell.style.background="#000",200);
+
+user.push(idx);
+
+if(user.join()!=pattern.slice(0,user.length).join()) return lose();
+if(user.length===pattern.length) return win();
+};
+});
+}
+
+function win(){
+coins+=10;
+pendingLevel=level+1;
+save();
+
+showAd(); //  ad
+
+content.innerHTML+=`
+<div class="overlay">
+<div class="popup">
+<h2>You Win</h2>
+<button onclick="level++;pendingLevel=level;save();load()">Next</button>
+<button onclick="showHome()">Exit</button>
+</div>
+</div>`;
+}
+
+function lose(){
+
+showAd(); //  ad
+
+content.innerHTML+=`
+<div class="overlay">
+<div class="popup">
+<h2>Game Over</h2>
+<button onclick="load()">Replay</button>
+<button onclick="showHome()">Exit</button>
+</div>
+</div>`;
+}
+
+showHome();
+
+</script>
 
 </body>
 </html>
